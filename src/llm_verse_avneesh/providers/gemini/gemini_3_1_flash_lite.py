@@ -122,7 +122,15 @@ async def gemini_3_1_flash_lite_function(request: LLMRequest) -> dict:
 
             messages.append(ToolMessage(content=str(tool_result), tool_call_id=tool_id))
 
-    raw_text = final_response.content if final_response is not None else ""
+    raw_text = ""
+    if final_response is not None:
+        raw_text = (
+            final_response.content if isinstance(final_response.content, str)
+            else "".join(
+                block.get("text", "") for block in final_response.content
+                if isinstance(block, dict) and block.get("type") == "text"
+            )
+        )
 
     logger.info(
         "gemini-3.1-flash-lite [text] | identifier=%s | input=%d | output=%d",

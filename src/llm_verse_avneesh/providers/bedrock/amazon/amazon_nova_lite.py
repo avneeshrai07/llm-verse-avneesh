@@ -110,6 +110,12 @@ async def amazon_nova_lite_function(request: LLMRequest) -> dict:
             )
         )
 
+    # Nova sometimes echoes its internal tool-result wrapper verbatim in the
+    # final answer instead of just the summarized text.
+    stripped = raw_text.strip()
+    if stripped.startswith("<toolResult>") and stripped.endswith("</toolResult>"):
+        raw_text = stripped[len("<toolResult>"):-len("</toolResult>")].strip()
+
     logger.info("nova-lite [text] | identifier=%s | input=%d | output=%d",
                 request.llm_identifier, total_input_tokens, total_output_tokens)
     result = LLMResponse(
