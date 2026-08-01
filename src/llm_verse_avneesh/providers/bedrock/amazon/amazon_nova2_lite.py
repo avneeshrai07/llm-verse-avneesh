@@ -3,9 +3,9 @@ import logging
 from langchain_aws import ChatBedrockConverse
 from langchain_core.messages import HumanMessage, SystemMessage
 
-from ..._register import register
-from ...models import LLMRequest
-from ...types import LLMResponse
+from ...._register import register
+from ....models import LLMRequest
+from ....types import LLMResponse
 
 logger = logging.getLogger(__name__)
 MODEL_ID = "us.amazon.nova-2-lite-v1:0"

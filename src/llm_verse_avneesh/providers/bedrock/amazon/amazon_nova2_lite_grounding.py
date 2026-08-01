@@ -3,9 +3,9 @@ import logging
 import boto3
 from botocore.config import Config
 
-from ..._register import register
-from ...models import LLMRequest
-from ...types import LLMResponse
+from ...._register import register
+from ....models import LLMRequest
+from ....types import LLMResponse
 
 
 logger = logging.getLogger(__name__)
