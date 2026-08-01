@@ -28,7 +28,6 @@ _DEFAULT_LIMITS = ModelLimits(temperature_max=1.0, max_output_tokens=4096)
 
 MODEL_LIMITS: dict[str, ModelLimits] = {
     "claude-haiku-4-5": ModelLimits(temperature_max=1.0, max_output_tokens=64000),
-    "claude-haiku-4-5-agentic": ModelLimits(temperature_max=1.0, max_output_tokens=64000),
     "nova-lite": ModelLimits(temperature_max=1.0, max_output_tokens=5000),
     "nova-2-lite": ModelLimits(temperature_max=1.0, max_output_tokens=5000),
     "nova-2-lite-grounding": ModelLimits(temperature_max=1.0, max_output_tokens=5000),

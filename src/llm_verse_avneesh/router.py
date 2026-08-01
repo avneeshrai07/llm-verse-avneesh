@@ -47,6 +47,14 @@ class Router:
         tools: Optional[List[Any]] = None,
         max_iterations: Optional[int] = None,
     ) -> dict[str, Any]:
+        """
+        Call the model registered as `llm_name` and return its response.
+
+        See llm_verse_avneesh.model_info(llm_name) for which arguments a given
+        model actually requires/accepts - e.g. Gemini models need
+        google_api_key instead of the AWS credential arguments, and only
+        some Bedrock models accept `tools`/`max_iterations`.
+        """
 
         # ── 1. Validate inputs ────────────────────────────────
         try:

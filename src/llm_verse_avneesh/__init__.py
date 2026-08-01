@@ -6,10 +6,10 @@ from .exceptions import (
     ProviderNotFoundError,
     LLMCallError,
 )
+from .help import help, list_models, model_info
 
 # CRITICAL: triggers @register() decorators
 from .providers.bedrock.claude import claude_haiku_4_5      # noqa: F401
-from .providers.bedrock.claude import agentic_claude_haiku_4_5  # noqa: F401
 from .providers.bedrock.amazon import amazon_nova_lite              # noqa: F401
 from .providers.bedrock.amazon import amazon_nova2_lite             # noqa: F401
 from .providers.bedrock.amazon import amazon_nova_pro                # noqa: F401
@@ -23,4 +23,7 @@ __all__ = [
     "RouterValidationError",
     "ProviderNotFoundError",
     "LLMCallError",
+    "help",
+    "list_models",
+    "model_info",
 ]

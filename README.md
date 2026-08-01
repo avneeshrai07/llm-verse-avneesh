@@ -44,19 +44,37 @@ asyncio.run(main())
 
 For Gemini, pass `google_api_key` instead of the AWS credential fields.
 
+## Discovering models
+
+Three callables let you explore what's registered without reading source:
+
+```python
+import llm_verse_avneesh as lv
+
+lv.help()             # documents list_models(), model_info(), and Router.get_response()
+lv.list_models()       # [{"llm_name": "nova-lite", "display_name": "Amazon Nova Lite", "provider": "bedrock"}, ...]
+lv.model_info("nova-lite")   # required vs. optional arguments for that specific model
+```
+
+`model_info(llm_name)` returns exactly what that model needs and accepts —
+e.g. Gemini models list `google_api_key` under `required` and never AWS
+credentials; only the Bedrock chat models that actually implement an agentic
+loop list `tools`/`max_iterations` under `optional`. It raises
+`ProviderNotFoundError` for an unknown `llm_name`.
+
 ## Registered model names
 
 Registry keys match the name each provider documents publicly for the
-model — not an internal AWS/Anthropic model ID:
+model — not an internal AWS/Anthropic model ID. (See `list_models()` /
+`model_info()` above for this same information at runtime.)
 
 | `llm_name`                 | Provider | Notes                                  |
 |-----------------------------|----------|-----------------------------------------|
-| `claude-haiku-4-5`          | Bedrock  | plain text / structured output          |
-| `claude-haiku-4-5-agentic`  | Bedrock  | tool-calling loop, pass `tools=[...]`   |
-| `nova-lite`                 | Bedrock  |                                          |
-| `nova-2-lite`                | Bedrock  |                                          |
+| `claude-haiku-4-5`          | Bedrock  | plain text / structured output; pass `tools=[...]` for an agentic tool-calling loop |
+| `nova-lite`                 | Bedrock  | plain text / structured output; pass `tools=[...]` for an agentic tool-calling loop |
+| `nova-2-lite`                | Bedrock  | plain text / structured output; pass `tools=[...]` for an agentic tool-calling loop |
 | `nova-2-lite-grounding`      | Bedrock  | web grounding; US regions only          |
-| `nova-pro`                  | Bedrock  |                                          |
+| `nova-pro`                  | Bedrock  | plain text / structured output; pass `tools=[...]` for an agentic tool-calling loop |
 | `gemini-3.1-flash-lite`      | Google   |                                          |
 
 ## Validation

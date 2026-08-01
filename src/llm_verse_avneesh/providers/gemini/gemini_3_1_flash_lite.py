@@ -9,10 +9,18 @@ from ...types import LLMResponse
 
 logger = logging.getLogger(__name__)
 MODEL_ID = "gemini-3.1-flash-lite"
+DISPLAY_NAME = "Gemini 3.1 Flash Lite"
+SUPPORTS_STRUCTURED_OUTPUT = True
+SUPPORTS_TOOLS = False
+NOTES = (
+    "No web-search/grounding capability is implemented for Gemini in this "
+    "library yet - only plain text and structured output are supported."
+)
 
 
 @register("gemini-3.1-flash-lite")
 async def gemini_3_1_flash_lite_function(request: LLMRequest) -> dict:
+    """Google Gemini 3.1 Flash Lite. Plain text or structured (pydantic_model) output."""
 
     client = ChatGoogleGenerativeAI(
         model=MODEL_ID,

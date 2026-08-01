@@ -9,7 +9,6 @@ from llm_verse_avneesh.exceptions import ProviderNotFoundError
 
 EXPECTED_PROVIDERS = {
     "claude-haiku-4-5",
-    "claude-haiku-4-5-agentic",
     "nova-lite",
     "nova-2-lite",
     "nova-2-lite-grounding",

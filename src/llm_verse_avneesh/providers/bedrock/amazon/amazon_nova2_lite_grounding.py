@@ -10,6 +10,14 @@ from ....types import LLMResponse
 
 logger = logging.getLogger(__name__)
 MODEL_ID = "us.amazon.nova-2-lite-v1:0"
+DISPLAY_NAME = "Amazon Nova 2 Lite (Grounding)"
+SUPPORTS_STRUCTURED_OUTPUT = False
+SUPPORTS_TOOLS = False
+NOTES = (
+    "region_name must be a US AWS region (us-*). Web-search grounding runs "
+    "automatically via Nova's built-in systemTool and is not configurable "
+    "per-request - there is no `tools` argument for this model."
+)
 
 TOOL_CONFIG = {
     "tools": [
@@ -24,6 +32,7 @@ TOOL_CONFIG = {
 
 @register("nova-2-lite-grounding")
 async def amazon_nova2_lite_grounding_function(request: LLMRequest) -> dict:
+    """Amazon Nova 2 Lite via Bedrock with built-in web-search grounding. US AWS regions only; returns cited sources alongside the response."""
 
     # Grounding only works in US AWS regions. Rather than silently forcing
     # us-east-1 regardless of what the caller asked for, honor
@@ -34,7 +43,7 @@ async def amazon_nova2_lite_grounding_function(request: LLMRequest) -> dict:
             f"(got region_name={request.region_name!r})"
         )
 
-    # Must use boto3 directly — ChatBedrockConverse does NOT support systemTool/toolConfig
+    # Must use boto3 directly - ChatBedrockConverse does NOT support systemTool/toolConfig
     bedrock = boto3.client(
         "bedrock-runtime",
         region_name=request.region_name,
