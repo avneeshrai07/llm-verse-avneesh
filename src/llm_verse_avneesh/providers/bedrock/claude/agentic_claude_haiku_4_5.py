@@ -1,0 +1,117 @@
+from __future__ import annotations
+import logging
+from langchain_aws import ChatBedrockConverse
+from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
+
+from ...._register import register
+from ....models import LLMRequest
+from ....types import LLMResponse
+
+logger = logging.getLogger(__name__)
+MODEL_ID = "us.anthropic.claude-haiku-4-5-20251001-v1:0"
+
+
+@register("claude-haiku-4-5-agentic")
+async def agentic_haiku_45_function(request: LLMRequest) -> dict:
+
+    client = ChatBedrockConverse(
+        model_id=MODEL_ID,
+        region_name=request.region_name,
+        aws_access_key_id=request.aws_access_key_id,
+        aws_secret_access_key=request.aws_secret_access_key.get_secret_value(),
+        temperature=request.temperature,
+        max_tokens=request.max_tokens,
+    )
+
+    if request.tools:
+        client = client.bind_tools(request.tools)
+
+    user_message = (
+        f"{request.user_prompt}\n\nContext:\n{request.context}"
+        if request.context else request.user_prompt
+    )
+    messages = [
+        SystemMessage(content=request.system_prompt),
+        HumanMessage(content=user_message),
+    ]
+
+    total_input_tokens = 0
+    total_output_tokens = 0
+    final_response = None
+
+    max_iterations = request.max_iterations if request.max_iterations is not None else 10
+
+    logger.info(
+        "agent start | identifier=%s | max_iterations=%d",
+        request.llm_identifier, max_iterations,
+    )
+
+    for iteration in range(max_iterations):
+        logger.info("iteration %d/%d | invoking LLM", iteration + 1, max_iterations)
+        response = await client.ainvoke(messages)
+        usage = response.usage_metadata or {}
+        total_input_tokens += usage.get("input_tokens", 0)
+        total_output_tokens += usage.get("output_tokens", 0)
+
+        messages.append(response)
+        final_response = response
+
+        if not response.tool_calls:
+            logger.info("iteration %d/%d | no tool calls — finishing", iteration + 1, max_iterations)
+            break
+
+        logger.info(
+            "iteration %d/%d | %d tool call(s): %s",
+            iteration + 1, max_iterations,
+            len(response.tool_calls),
+            [tc["name"] for tc in response.tool_calls],
+        )
+
+        for tool_call in response.tool_calls:
+            tool_name = tool_call["name"]
+            tool_args = tool_call["args"]
+            tool_id = tool_call["id"]
+
+            logger.info("tool call | %s | args=%s", tool_name, tool_args)
+
+            tool_result = f"Tool '{tool_name}' not found"
+            if request.tools:
+                for tool in request.tools:
+                    if getattr(tool, "name", None) == tool_name:
+                        try:
+                            if hasattr(tool, "ainvoke"):
+                                tool_result = await tool.ainvoke(tool_args)
+                            else:
+                                tool_result = tool.invoke(tool_args)
+                        except Exception as exc:
+                            logger.error("tool error | %s | %s", tool_name, exc)
+                            tool_result = f"Error executing tool '{tool_name}': {exc}"
+                        break
+
+            result_preview = str(tool_result)[:200]
+            logger.info("tool result | %s | %s%s", tool_name, result_preview, "..." if len(str(tool_result)) > 200 else "")
+            messages.append(ToolMessage(content=str(tool_result), tool_call_id=tool_id))
+
+    raw_text = ""
+    if final_response is not None:
+        raw_text = (
+            final_response.content if isinstance(final_response.content, str)
+            else "".join(
+                block.get("text", "") for block in final_response.content
+                if isinstance(block, dict) and block.get("type") == "text"
+            )
+        )
+
+    logger.info(
+        "claude-haiku-4-5-agentic | identifier=%s | iterations=%d | input=%d | output=%d",
+        request.llm_identifier, iteration + 1, total_input_tokens, total_output_tokens,
+    )
+    result = LLMResponse(
+        response=raw_text,
+        provider="bedrock",
+        model=MODEL_ID,
+        input_tokens=total_input_tokens,
+        output_tokens=total_output_tokens,
+        llm_identifier=request.llm_identifier,
+    )
+    return result.model_dump()

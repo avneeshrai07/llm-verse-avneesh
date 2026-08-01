@@ -1,0 +1,63 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "llm-verse-avneesh"
+version = "0.1.0"
+description = "Async LLM router across AWS Bedrock and Google Gemini providers"
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [
+    { name = "Avneesh Rai", email = "ofc.avneesh@gmail.com" },
+]
+requires-python = ">=3.9"
+keywords = ["llm", "router", "bedrock", "gemini", "claude", "nova", "langchain"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Typing :: Typed",
+]
+
+dependencies = [
+    "pydantic>=2.0,<3",
+    "langchain-core>=0.3,<1",
+]
+
+[project.optional-dependencies]
+aws = [
+    "boto3>=1.34",
+    "langchain-aws>=0.2",
+]
+google = [
+    "langchain-google-genai>=2.0",
+]
+all = [
+    "llm-verse-avneesh[aws,google]",
+]
+dev = [
+    "llm-verse-avneesh[all]",
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24",
+]
+
+[project.urls]
+Homepage = "https://github.com/avneeshrai07/llm-verse-avneesh"
+Repository = "https://github.com/avneeshrai07/llm-verse-avneesh"
+Issues = "https://github.com/avneeshrai07/llm-verse-avneesh/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+llm_verse_avneesh = ["py.typed"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
