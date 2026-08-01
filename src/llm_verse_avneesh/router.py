@@ -37,23 +37,28 @@ class Router:
         max_tokens: int,
         repo_name: str,
         llm_identifier: str,
-        # ── AWS / Bedrock (optional for Gemini) ───────────────
+        # ── AWS / Bedrock (optional for Gemini/Groq) ──────────
         region_name: Optional[AWSRegion] = None,
         aws_access_key_id: Optional[str] = None,
         aws_secret_access_key: Optional[str | SecretStr] = None,
-        # ── Google / Gemini (optional for AWS) ────────────────
+        # ── Google / Gemini (optional for AWS/Groq) ───────────
         google_api_key: Optional[str | SecretStr] = None,
+        # ── Groq (optional for AWS/Gemini) ────────────────────
+        groq_api_key: Optional[str | SecretStr] = None,
         # ── Agentic ───────────────────────────────────────────
         tools: Optional[List[Any]] = None,
         max_iterations: Optional[int] = None,
+        # ── Vision ─────────────────────────────────────────────
+        images: Optional[List[str]] = None,
     ) -> dict[str, Any]:
         """
         Call the model registered as `llm_name` and return its response.
 
         See llm_verse_avneesh.model_info(llm_name) for which arguments a given
-        model actually requires/accepts - e.g. Gemini models need
-        google_api_key instead of the AWS credential arguments, and only
-        some Bedrock models accept `tools`/`max_iterations`.
+        model actually requires/accepts - e.g. Gemini/Groq models need
+        google_api_key/groq_api_key instead of the AWS credential arguments,
+        only some models accept `tools`/`max_iterations`, and only vision-
+        capable models (currently qwen-3.6-27b) act on `images`.
         """
 
         # ── 1. Validate inputs ────────────────────────────────
@@ -70,10 +75,12 @@ class Router:
                 aws_access_key_id=aws_access_key_id,
                 aws_secret_access_key=aws_secret_access_key,
                 google_api_key=google_api_key,
+                groq_api_key=groq_api_key,
                 repo_name=repo_name,
                 llm_identifier=llm_identifier,
                 tools=tools,
                 max_iterations=max_iterations,
+                images=images,
             )
         except Exception as exc:
             raise RouterValidationError(f"Invalid input: {exc}") from exc

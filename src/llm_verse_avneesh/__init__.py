@@ -15,6 +15,9 @@ from .providers.bedrock.amazon import amazon_nova2_lite             # noqa: F401
 from .providers.bedrock.amazon import amazon_nova_pro                # noqa: F401
 from .providers.bedrock.amazon import amazon_nova2_lite_grounding    # noqa: F401
 from .providers.gemini import gemini_3_1_flash_lite          # noqa: F401
+from .providers.groq import gpt_oss_120b                     # noqa: F401
+from .providers.groq import gpt_oss_20b                      # noqa: F401
+from .providers.groq import qwen_3_6_27b                     # noqa: F401
 
 __all__ = [
     "Router",

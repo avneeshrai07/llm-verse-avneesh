@@ -14,6 +14,9 @@ EXPECTED_PROVIDERS = {
     "nova-2-lite-grounding",
     "nova-pro",
     "gemini-3.1-flash-lite",
+    "gpt-oss-120b",
+    "gpt-oss-20b",
+    "qwen-3.6-27b",
 }
 
 

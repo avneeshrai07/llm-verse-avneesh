@@ -34,6 +34,10 @@ _GOOGLE_REQUIRED = {
     "google_api_key": "Google API key for the Gemini API.",
 }
 
+_GROQ_REQUIRED = {
+    "groq_api_key": "Groq API key for the Groq API.",
+}
+
 _STRUCTURED_OPTIONAL = {
     "pydantic_model": "A BaseModel subclass - if given, the response is parsed into it instead of returned as plain text.",
 }
@@ -41,6 +45,10 @@ _STRUCTURED_OPTIONAL = {
 _TOOLS_OPTIONAL = {
     "tools": "A list of LangChain-compatible tools. If given, the call runs an agentic tool-calling loop instead of a single response.",
     "max_iterations": "Max tool-calling loop iterations (default 10, max 50). Only meaningful when `tools` is given.",
+}
+
+_VISION_OPTIONAL = {
+    "images": "A list of image URLs or base64 data URIs for vision input. Ignored by non-vision models.",
 }
 
 
@@ -84,6 +92,8 @@ def model_info(llm_name: str) -> dict[str, Any]:
     required = dict(_BASE_REQUIRED)
     if provider == "gemini":
         required.update(_GOOGLE_REQUIRED)
+    elif provider == "groq":
+        required.update(_GROQ_REQUIRED)
     else:
         required.update(_AWS_REQUIRED)
 
@@ -92,6 +102,8 @@ def model_info(llm_name: str) -> dict[str, Any]:
         optional.update(_STRUCTURED_OPTIONAL)
     if getattr(module, "SUPPORTS_TOOLS", False):
         optional.update(_TOOLS_OPTIONAL)
+    if getattr(module, "SUPPORTS_VISION", False):
+        optional.update(_VISION_OPTIONAL)
 
     return {
         "llm_name": llm_name,

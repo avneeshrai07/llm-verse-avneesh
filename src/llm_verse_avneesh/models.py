@@ -37,12 +37,26 @@ AWSRegion = Literal[
 
 
 # ─────────────────────────────────────────────────────────────
+# GROQ REGISTRY NAMES
+# ─────────────────────────────────────────────────────────────
+# Groq model names don't share a common substring the way "gemini" does,
+# so credential validation below keys off this explicit set instead of a
+# name-pattern check.
+
+GROQ_MODEL_NAMES = frozenset({
+    "gpt-oss-120b",
+    "gpt-oss-20b",
+    "qwen-3.6-27b",
+})
+
+
+# ─────────────────────────────────────────────────────────────
 # REQUEST MODEL
 # ─────────────────────────────────────────────────────────────
 
 class LLMRequest(BaseModel):
     llm_name: str
-    region_name: Optional[AWSRegion] = None    # optional: not needed for Gemini
+    region_name: Optional[AWSRegion] = None    # optional: not needed for Gemini/Groq
     system_prompt: str
     user_prompt: str
     context: str | None = None
@@ -52,13 +66,17 @@ class LLMRequest(BaseModel):
     # SecretStr: prevents credentials leaking into repr(), logs, or
     # model_dump()/model_dump_json() output by accident. Call
     # .get_secret_value() at the point of use (inside a provider handler).
-    aws_access_key_id: Optional[str] = None    # optional: not needed for Gemini
-    aws_secret_access_key: Optional[SecretStr] = None  # optional: not needed for Gemini
-    google_api_key: Optional[SecretStr] = None       # optional: not needed for AWS
+    aws_access_key_id: Optional[str] = None    # optional: not needed for Gemini/Groq
+    aws_secret_access_key: Optional[SecretStr] = None  # optional: not needed for Gemini/Groq
+    google_api_key: Optional[SecretStr] = None       # optional: not needed for AWS/Groq
+    groq_api_key: Optional[SecretStr] = None         # optional: not needed for AWS/Gemini
     repo_name: str
     llm_identifier: str
     tools: Optional[List[Any]] = None
     max_iterations: Optional[int] = None
+    # Image URLs or base64 data URIs (e.g. "data:image/jpeg;base64,...") for
+    # vision-capable models. Ignored by models that don't support vision.
+    images: Optional[List[str]] = None
 
     model_config = {"arbitrary_types_allowed": True}
 
@@ -80,11 +98,22 @@ class LLMRequest(BaseModel):
         return v.strip() if v else None
 
     # Same emptiness check, but for the SecretStr credential fields.
-    @field_validator("aws_secret_access_key", "google_api_key")
+    @field_validator("aws_secret_access_key", "google_api_key", "groq_api_key")
     @classmethod
     def validate_optional_secrets(cls, v: Optional[SecretStr], info: Any) -> Optional[SecretStr]:
         if v is not None and not v.get_secret_value().strip():
             raise ValueError(f"{info.field_name!r} must not be an empty string if provided")
+        return v
+
+    @field_validator("images")
+    @classmethod
+    def validate_images(cls, v: Optional[List[str]]) -> Optional[List[str]]:
+        if v is None:
+            return v
+        if not v:
+            raise ValueError("images must not be an empty list if provided")
+        if any(not img or not img.strip() for img in v):
+            raise ValueError("images must not contain empty strings")
         return v
 
     # Sanity bounds only — these are NOT the real per-model limits.
@@ -138,11 +167,17 @@ class LLMRequest(BaseModel):
     def validate_provider_credentials(self) -> "LLMRequest":
         """Ensure the right credentials are present for the chosen provider."""
         is_gemini = "gemini" in self.llm_name.lower()
+        is_groq = self.llm_name in GROQ_MODEL_NAMES
 
         if is_gemini:
             if not self.google_api_key:
                 raise ValueError(
                     "google_api_key is required for Gemini models"
+                )
+        elif is_groq:
+            if not self.groq_api_key:
+                raise ValueError(
+                    "groq_api_key is required for Groq models"
                 )
         else:
             if not self.aws_access_key_id or not self.aws_secret_access_key:

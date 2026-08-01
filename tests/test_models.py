@@ -74,6 +74,47 @@ def test_missing_google_api_key_rejected_for_gemini():
         )
 
 
+def test_missing_groq_api_key_rejected_for_groq():
+    with pytest.raises(ValidationError):
+        LLMRequest(
+            llm_name="gpt-oss-120b",
+            system_prompt="x",
+            user_prompt="y",
+            context=None,
+            temperature=0.5,
+            pydantic_model=None,
+            max_tokens=100,
+            repo_name="repo",
+            llm_identifier="id-1",
+        )
+
+
+def test_groq_api_key_accepted_for_groq_model():
+    req = LLMRequest(
+        llm_name="gpt-oss-120b",
+        system_prompt="x",
+        user_prompt="y",
+        context=None,
+        temperature=0.5,
+        pydantic_model=None,
+        max_tokens=100,
+        repo_name="repo",
+        llm_identifier="id-1",
+        groq_api_key="fake-groq-key",
+    )
+    assert req.groq_api_key.get_secret_value() == "fake-groq-key"
+
+
+def test_empty_images_list_rejected():
+    with pytest.raises(ValidationError):
+        make_request(images=[])
+
+
+def test_images_with_blank_entry_rejected():
+    with pytest.raises(ValidationError):
+        make_request(images=["https://example.com/a.png", "   "])
+
+
 def test_pydantic_model_must_be_basemodel_subclass():
     with pytest.raises(ValidationError):
         make_request(pydantic_model=int)

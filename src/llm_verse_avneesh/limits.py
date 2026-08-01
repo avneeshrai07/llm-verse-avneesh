@@ -33,6 +33,9 @@ MODEL_LIMITS: dict[str, ModelLimits] = {
     "nova-2-lite-grounding": ModelLimits(temperature_max=1.0, max_output_tokens=5000),
     "nova-pro": ModelLimits(temperature_max=1.0, max_output_tokens=5000),
     "gemini-3.1-flash-lite": ModelLimits(temperature_max=2.0, max_output_tokens=8192),
+    "gpt-oss-120b": ModelLimits(temperature_max=2.0, max_output_tokens=65536),
+    "gpt-oss-20b": ModelLimits(temperature_max=2.0, max_output_tokens=65536),
+    "qwen-3.6-27b": ModelLimits(temperature_max=2.0, max_output_tokens=16384),
 }
 
 

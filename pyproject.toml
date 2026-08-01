@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "llm-verse-avneesh"
-version = "0.1.5"
-description = "Async LLM router across AWS Bedrock and Google Gemini providers"
+version = "0.1.6"
+description = "Async LLM router across AWS Bedrock, Google Gemini, and Groq providers"
 readme = "README.md"
 license = "Apache-2.0"
 license-files = ["LICENSE"]
@@ -13,7 +13,7 @@ authors = [
     { name = "Avneesh Rai", email = "ofc.avneesh@gmail.com" },
 ]
 requires-python = ">=3.10"
-keywords = ["llm", "router", "bedrock", "gemini", "claude", "nova", "langchain"]
+keywords = ["llm", "router", "bedrock", "gemini", "groq", "claude", "nova", "langchain"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -37,8 +37,11 @@ aws = [
 google = [
     "langchain-google-genai>=4.0",
 ]
+groq = [
+    "langchain-groq>=1.0",
+]
 all = [
-    "llm-verse-avneesh[aws,google]",
+    "llm-verse-avneesh[aws,google,groq]",
 ]
 dev = [
     "llm-verse-avneesh[all]",
