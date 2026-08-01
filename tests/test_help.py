@@ -39,14 +39,8 @@ def test_model_info_gemini_requires_google_not_aws():
     assert "aws_secret_access_key" not in info["required"]
 
 
-def test_model_info_gemini_has_no_tools_option():
-    info = llm_verse_avneesh.model_info("gemini-3.1-flash-lite")
-    assert "tools" not in info["optional"]
-    assert "max_iterations" not in info["optional"]
-
-
 def test_model_info_tool_capable_models_expose_tools_option():
-    for name in ("claude-haiku-4-5", "nova-lite", "nova-2-lite", "nova-pro"):
+    for name in ("claude-haiku-4-5", "nova-lite", "nova-2-lite", "nova-pro", "gemini-3.1-flash-lite"):
         info = llm_verse_avneesh.model_info(name)
         assert "tools" in info["optional"]
         assert "max_iterations" in info["optional"]

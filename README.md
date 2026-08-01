@@ -58,9 +58,10 @@ lv.model_info("nova-lite")   # required vs. optional arguments for that specific
 
 `model_info(llm_name)` returns exactly what that model needs and accepts —
 e.g. Gemini models list `google_api_key` under `required` and never AWS
-credentials; only the Bedrock chat models that actually implement an agentic
-loop list `tools`/`max_iterations` under `optional`. It raises
-`ProviderNotFoundError` for an unknown `llm_name`.
+credentials; only models that actually implement an agentic tool-calling
+loop (all chat models except `nova-2-lite-grounding`) list
+`tools`/`max_iterations` under `optional`. It raises `ProviderNotFoundError`
+for an unknown `llm_name`.
 
 ## Registered model names
 
@@ -75,7 +76,7 @@ model — not an internal AWS/Anthropic model ID. (See `list_models()` /
 | `nova-2-lite`                | Bedrock  | plain text / structured output; pass `tools=[...]` for an agentic tool-calling loop |
 | `nova-2-lite-grounding`      | Bedrock  | web grounding; US regions only          |
 | `nova-pro`                  | Bedrock  | plain text / structured output; pass `tools=[...]` for an agentic tool-calling loop |
-| `gemini-3.1-flash-lite`      | Google   |                                          |
+| `gemini-3.1-flash-lite`      | Google   | plain text / structured output; pass `tools=[...]` for an agentic tool-calling loop |
 
 ## Validation
 
