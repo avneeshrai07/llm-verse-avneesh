@@ -6,7 +6,12 @@ import inspect
 import sys
 from typing import Any
 
-from .registry import get_handler, list_providers
+from .registry import (
+    get_handler,
+    list_providers,
+    get_embedding_handler,
+    list_embedding_providers,
+)
 from .router import Router
 
 # Fields every model needs regardless of provider - part of LLMRequest's
@@ -117,6 +122,61 @@ def model_info(llm_name: str) -> dict[str, Any]:
     }
 
 
+_EMBEDDING_AWS_REQUIRED = {
+    "region_name": "AWS region to call Bedrock in.",
+    "aws_access_key_id": "AWS access key id.",
+    "aws_secret_access_key": "AWS secret access key.",
+}
+
+_EMBEDDING_BASE_REQUIRED = {
+    "text": "The text to embed.",
+    "repo_name": "Caller-supplied repo/project identifier, echoed back for tracing.",
+    "llm_identifier": "Caller-supplied identifier for this call, echoed back in the response.",
+}
+
+_EMBEDDING_BASE_OPTIONAL = {
+    "dimensions": "Output vector size, if the model supports more than one (e.g. Titan Embed V2: 256/512/1024). Defaults to the provider's own default.",
+}
+
+
+def list_embedding_models() -> list[dict[str, str]]:
+    """List every registered embedding model's llm_name, display name, and provider."""
+    result = []
+    for name in list_embedding_providers():
+        handler = get_embedding_handler(name)
+        module = _module_of(handler)
+        result.append({
+            "llm_name": name,
+            "display_name": getattr(module, "DISPLAY_NAME", name),
+            "provider": _provider_category(handler),
+        })
+    return result
+
+
+def embedding_model_info(llm_name: str) -> dict[str, Any]:
+    """
+    Return what it takes to call a specific embedding model: display name,
+    provider, model id, and required/optional fields.
+    """
+    handler = get_embedding_handler(llm_name)  # raises ProviderNotFoundError if unknown
+    module = _module_of(handler)
+    provider = _provider_category(handler)
+
+    required = dict(_EMBEDDING_BASE_REQUIRED)
+    required.update(_EMBEDDING_AWS_REQUIRED)  # only AWS/Bedrock is registered so far
+
+    return {
+        "llm_name": llm_name,
+        "display_name": getattr(module, "DISPLAY_NAME", llm_name),
+        "provider": provider,
+        "model_id": getattr(module, "MODEL_ID", None),
+        "description": inspect.getdoc(handler),
+        "required": required,
+        "optional": dict(_EMBEDDING_BASE_OPTIONAL),
+        "notes": getattr(module, "NOTES", None),
+    }
+
+
 def help() -> None:
     """Print every callable this library exposes and what it's for."""
     print("llm_verse_avneesh - available callables")
@@ -137,5 +197,21 @@ def help() -> None:
         print(f"    {line}")
     print()
 
+    print("list_embedding_models()")
+    print(f"    {inspect.getdoc(list_embedding_models)}")
+    print()
+
+    print("embedding_model_info(llm_name)")
+    print(f"    {inspect.getdoc(embedding_model_info)}")
+    print()
+
+    print("Router().get_embedding(...)")
+    doc = inspect.getdoc(Router.get_embedding) or "No description available."
+    for line in doc.splitlines():
+        print(f"    {line}")
+    print()
+
     print(f"See list_models() for the {len(list_providers())} registered llm_name values, "
           f"and model_info(llm_name) for what each one needs.")
+    print(f"See list_embedding_models() for the {len(list_embedding_providers())} registered "
+          f"embedding llm_name values, and embedding_model_info(llm_name) for what each needs.")

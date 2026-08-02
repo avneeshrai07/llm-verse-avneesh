@@ -189,3 +189,75 @@ class LLMRequest(BaseModel):
                     "region_name is required for AWS/Bedrock models"
                 )
         return self
+
+
+# ─────────────────────────────────────────────────────────────
+# EMBEDDING REQUEST
+# ─────────────────────────────────────────────────────────────
+# Deliberately separate from LLMRequest rather than reusing it with a bunch
+# of ignored fields: embeddings take text in, a vector out — no
+# system_prompt, temperature, pydantic_model, tools, or images.
+
+class EmbeddingRequest(BaseModel):
+    llm_name: str
+    text: str
+    # Provider-specific default if omitted (e.g. Titan Embed V2 defaults to
+    # 1024) — validated for sign here, not against any specific model's
+    # supported set, since that varies per provider.
+    dimensions: Optional[int] = None
+    region_name: Optional[AWSRegion] = None      # optional: only AWS/Bedrock is registered so far
+    aws_access_key_id: Optional[str] = None
+    aws_secret_access_key: Optional[SecretStr] = None
+    repo_name: str
+    llm_identifier: str
+
+    model_config = {"arbitrary_types_allowed": True}
+
+    @field_validator("llm_name", "repo_name", "llm_identifier")
+    @classmethod
+    def validate_non_empty_strings(cls, v: str, info: Any) -> str:
+        if not v or not v.strip():
+            raise ValueError(f"{info.field_name!r} must be a non-empty string")
+        return v.strip()
+
+    @field_validator("text")
+    @classmethod
+    def validate_text_not_empty(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("'text' must be a non-empty string")
+        return v
+
+    @field_validator("dimensions")
+    @classmethod
+    def validate_dimensions(cls, v: Optional[int]) -> Optional[int]:
+        if v is not None and v <= 0:
+            raise ValueError(f"dimensions must be a positive integer, got {v}")
+        return v
+
+    @field_validator("aws_access_key_id")
+    @classmethod
+    def validate_optional_strings(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None and not v.strip():
+            raise ValueError("'aws_access_key_id' must not be an empty string if provided")
+        return v.strip() if v else None
+
+    @field_validator("aws_secret_access_key")
+    @classmethod
+    def validate_optional_secrets(cls, v: Optional[SecretStr]) -> Optional[SecretStr]:
+        if v is not None and not v.get_secret_value().strip():
+            raise ValueError("'aws_secret_access_key' must not be an empty string if provided")
+        return v
+
+    @model_validator(mode="after")
+    def validate_provider_credentials(self) -> "EmbeddingRequest":
+        # Only Bedrock embedding models are registered right now (see
+        # providers/bedrock/amazon/amazon_titan_embed_v2.py) — add
+        # provider-specific branches here the same way LLMRequest does for
+        # Gemini/Groq, once another embedding provider is actually registered.
+        if not self.aws_access_key_id or not self.aws_secret_access_key:
+            raise ValueError(
+                "aws_access_key_id and aws_secret_access_key are required for AWS/Bedrock embedding models"
+            )
+        if not self.region_name:
+            raise ValueError("region_name is required for AWS/Bedrock embedding models")
+        return self

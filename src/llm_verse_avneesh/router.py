@@ -7,8 +7,8 @@ from typing import TypeVar, Type, Optional, List, Any
 
 from pydantic import BaseModel, SecretStr
 
-from .models import LLMRequest, AWSRegion
-from .registry import get_handler
+from .models import LLMRequest, EmbeddingRequest, AWSRegion
+from .registry import get_handler, get_embedding_handler
 from .limits import get_limits
 from .exceptions import (
     RouterValidationError,
@@ -119,4 +119,60 @@ class Router:
             ) from exc
 
         # ── 5. Return the LLM output to the user ────────────
+        return response
+
+    async def get_embedding(
+        self,
+        llm_name: str,
+        text: str,
+        repo_name: str,
+        llm_identifier: str,
+        dimensions: Optional[int] = None,
+        # ── AWS / Bedrock (the only provider registered so far) ────
+        region_name: Optional[AWSRegion] = None,
+        aws_access_key_id: Optional[str] = None,
+        aws_secret_access_key: Optional[str | SecretStr] = None,
+    ) -> dict[str, Any]:
+        """
+        Embed `text` using the model registered as `llm_name` and return the
+        vector (and metadata) as a dict — same "always a plain dict" contract
+        as get_response(), via EmbeddingResponse.
+
+        See llm_verse_avneesh.list_embedding_providers() for what's
+        registered; currently Bedrock's Titan Embed V2 ("titan-embed-v2").
+        """
+
+        # ── 1. Validate inputs ────────────────────────────────
+        try:
+            request = EmbeddingRequest(
+                llm_name=llm_name,
+                text=text,
+                dimensions=dimensions,
+                region_name=region_name,
+                aws_access_key_id=aws_access_key_id,
+                aws_secret_access_key=aws_secret_access_key,
+                repo_name=repo_name,
+                llm_identifier=llm_identifier,
+            )
+        except Exception as exc:
+            raise RouterValidationError(f"Invalid input: {exc}") from exc
+
+        # ── 2. Find the relevant function from the embedding registry ─
+        handler = get_embedding_handler(request.llm_name)
+
+        # ── 3. Transfer user input to that function ───────────
+        try:
+            response: dict[str, Any] = await handler(request)
+        except ProviderNotFoundError:
+            raise
+        except Exception as exc:
+            logger.error(
+                "Embedding call failed | llm=%s | identifier=%s | error=%s",
+                request.llm_name, request.llm_identifier, exc,
+            )
+            raise LLMCallError(
+                f"'{request.llm_name}' failed for '{request.llm_identifier}': {exc}"
+            ) from exc
+
+        # ── 4. Return the embedding to the caller ──────────────
         return response

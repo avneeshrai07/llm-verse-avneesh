@@ -1,19 +1,26 @@
 from .router import Router
-from .types import LLMResponse
+from .types import LLMResponse, EmbeddingResponse
 from .exceptions import (
     LLMRouterError,
     RouterValidationError,
     ProviderNotFoundError,
     LLMCallError,
 )
-from .help import help, list_models, model_info
+from .help import (
+    help,
+    list_models,
+    model_info,
+    list_embedding_models,
+    embedding_model_info,
+)
 
-# CRITICAL: triggers @register() decorators
+# CRITICAL: triggers @register()/@register_embedding() decorators
 from .providers.bedrock.claude import claude_haiku_4_5      # noqa: F401
 from .providers.bedrock.amazon import amazon_nova_lite              # noqa: F401
 from .providers.bedrock.amazon import amazon_nova2_lite             # noqa: F401
 from .providers.bedrock.amazon import amazon_nova_pro                # noqa: F401
 from .providers.bedrock.amazon import amazon_nova2_lite_grounding    # noqa: F401
+from .providers.bedrock.amazon import amazon_titan_embed_v2          # noqa: F401
 from .providers.gemini import gemini_3_1_flash_lite          # noqa: F401
 from .providers.groq import gpt_oss_120b                     # noqa: F401
 from .providers.groq import gpt_oss_20b                      # noqa: F401
@@ -22,6 +29,7 @@ from .providers.groq import qwen_3_6_27b                     # noqa: F401
 __all__ = [
     "Router",
     "LLMResponse",
+    "EmbeddingResponse",
     "LLMRouterError",
     "RouterValidationError",
     "ProviderNotFoundError",
@@ -29,4 +37,6 @@ __all__ = [
     "help",
     "list_models",
     "model_info",
+    "list_embedding_models",
+    "embedding_model_info",
 ]
