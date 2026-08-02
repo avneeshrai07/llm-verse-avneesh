@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "llm-verse-avneesh"
-version = "0.1.9"
+version = "0.2.0"
 description = "Async LLM router across AWS Bedrock, Google Gemini, and Groq providers"
 readme = "README.md"
 license = "Apache-2.0"
