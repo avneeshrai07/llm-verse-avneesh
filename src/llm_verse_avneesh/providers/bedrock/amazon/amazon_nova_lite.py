@@ -6,9 +6,10 @@ from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
 from ...._register import register
 from ....models import LLMRequest
 from ....types import LLMResponse
+from .._regions import resolve_model_id
 
 logger = logging.getLogger(__name__)
-MODEL_ID = "us.amazon.nova-lite-v1:0"
+MODEL_ID = "amazon.nova-lite-v1:0"
 DISPLAY_NAME = "Amazon Nova Lite"
 SUPPORTS_STRUCTURED_OUTPUT = True
 SUPPORTS_TOOLS = True
@@ -18,8 +19,10 @@ SUPPORTS_TOOLS = True
 async def amazon_nova_lite_function(request: LLMRequest) -> dict:
     """Amazon Nova Lite via Bedrock. Plain text or structured (pydantic_model) output; pass tools=[...] to run an agentic tool-calling loop."""
 
+    model_id = resolve_model_id(MODEL_ID, request.region_name)
+
     client = ChatBedrockConverse(
-        model_id=MODEL_ID,
+        model_id=model_id,
         region_name=request.region_name,
         aws_access_key_id=request.aws_access_key_id,
         aws_secret_access_key=request.aws_secret_access_key.get_secret_value(),
@@ -42,11 +45,21 @@ async def amazon_nova_lite_function(request: LLMRequest) -> dict:
         )
         response = await structured_client.ainvoke(messages)
         raw, parsed, usage = response["raw"], response["parsed"], response["raw"].usage_metadata
+        if parsed is None:
+            parsing_error = response.get("parsing_error")
+            logger.error(
+                "nova-lite [structured] | identifier=%s | failed to parse into %s: %s",
+                request.llm_identifier, request.pydantic_model.__name__, parsing_error,
+            )
+            raise ValueError(
+                f"nova-lite returned a response that could not be parsed into "
+                f"{request.pydantic_model.__name__}: {parsing_error}"
+            )
         logger.info("nova-lite [structured] | identifier=%s | input=%d | output=%d",
                     request.llm_identifier, usage["input_tokens"], usage["output_tokens"])
         result = LLMResponse(
             response=parsed.model_dump(),
-            provider="bedrock", model=MODEL_ID,
+            provider="bedrock", model=model_id,
             input_tokens=usage["input_tokens"],
             output_tokens=usage["output_tokens"],
             llm_identifier=request.llm_identifier,
@@ -120,7 +133,7 @@ async def amazon_nova_lite_function(request: LLMRequest) -> dict:
                 request.llm_identifier, total_input_tokens, total_output_tokens)
     result = LLMResponse(
         response=raw_text,
-        provider="bedrock", model=MODEL_ID,
+        provider="bedrock", model=model_id,
         input_tokens=total_input_tokens,
         output_tokens=total_output_tokens,
         llm_identifier=request.llm_identifier,

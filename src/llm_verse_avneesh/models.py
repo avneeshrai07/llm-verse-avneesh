@@ -161,6 +161,17 @@ class LLMRequest(BaseModel):
                     f"pydantic_model must be a BaseModel class, "
                     f"got {type(self.pydantic_model)}"
                 )
+            if self.pydantic_model.__name__.startswith("_"):
+                raise ValueError(
+                    f"pydantic_model class name {self.pydantic_model.__name__!r} "
+                    f"starts with an underscore. Some Bedrock models (Nova in "
+                    f"particular) strip a leading underscore from tool names in "
+                    f"their own response, while langchain registers the tool "
+                    f"under the literal class name — the mismatch then fails "
+                    f"structured-output parsing at call time with a confusing "
+                    f"'unknown tool' error. Rename the class without a leading "
+                    f"underscore (e.g. 'ExtractionBatch', not '_ExtractionBatch')."
+                )
         return self
 
     @model_validator(mode="after")

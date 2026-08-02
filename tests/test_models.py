@@ -142,3 +142,16 @@ def test_structured_pydantic_model_accepted():
 
     req = make_request(pydantic_model=Schema)
     assert req.pydantic_model is Schema
+
+
+def test_underscore_prefixed_pydantic_model_rejected():
+    # Nova's tool-calling strips a leading "_" from tool names, while
+    # langchain registers the tool under the literal class name — this
+    # mismatch fails structured-output parsing at call time with a
+    # confusing "unknown tool" error. Reject it up front instead, with a
+    # message that actually explains what to do about it.
+    class _PrivateLookingSchema(BaseModel):
+        answer: str
+
+    with pytest.raises(ValidationError, match="underscore"):
+        make_request(pydantic_model=_PrivateLookingSchema)
